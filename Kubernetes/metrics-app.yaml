@@ -1,0 +1,50 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: metrics-app-cfg
+  namespace: metrics-test
+data:
+  metrics-app.yaml: |
+    log-level: 0
+
+    metrics-port: 6000
+
+    name: metrics-app
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: metrics-app
+  namespace: metrics-test
+spec:
+  selector:
+    matchLabels:
+      app: metrics-app # has to match .spec.template.metadata.labels
+  serviceName: none
+  replicas: 2 # by default is 1
+  minReadySeconds: 10 # by default is 0
+  template:
+    metadata:
+      labels:
+        app: metrics-app # has to match .spec.selector.matchLabels
+        prometheus: "true"
+
+    spec:
+      terminationGracePeriodSeconds: 10
+      volumes:
+        - name: metrics-app-cfg
+          configMap:
+            name: metrics-app-cfg
+      containers:
+      - name: metrics-app
+        image: fir.love.io:3005/metrics-app:latest
+        ports:
+        - name: metrics
+          containerPort: 6000
+        volumeMounts:
+        - mountPath: /metrics-app/config
+          name: metrics-app-cfg
+          readOnly: true
+      nodeSelector:
+        cputype: amd64
