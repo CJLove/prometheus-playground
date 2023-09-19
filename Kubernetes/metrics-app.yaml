@@ -11,6 +11,8 @@ data:
     metrics-port: 6000
 
     name: metrics-app
+
+    id: aaa-bbb-ccc
 ---
 apiVersion: apps/v1
 kind: StatefulSet
@@ -39,6 +41,7 @@ spec:
       containers:
       - name: metrics-app
         image: fir.love.io:3005/metrics-app:latest
+        imagePullPolicy: Always
         ports:
         - name: metrics
           containerPort: 6000

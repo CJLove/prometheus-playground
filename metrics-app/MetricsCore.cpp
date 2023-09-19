@@ -51,3 +51,13 @@ MetricsCore::buildSummary(const std::string &name, const std::string &helpStr)
 {
     return prometheus::BuildSummary().Name(name).Help(helpStr).Register(*m_registry);
 }
+
+prometheus::Family<prometheus::Gauge>& 
+MetricsCore::buildInfo(const std::string &name, const std::string &helpStr, const prometheus::Labels &labels)
+{
+    auto &infoGaugeFamily = prometheus::BuildGauge().Name(name).Help(helpStr).Register(*m_registry);
+    auto &infoGauge = infoGaugeFamily.Add(labels);
+    infoGauge.Set(1);
+
+    return infoGaugeFamily;
+}

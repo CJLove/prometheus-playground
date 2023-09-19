@@ -4,3 +4,5 @@ log-level: 0
 metrics-port: 6000
 
 name: metrics-app
+
+id: aaa-bbb-ccc
