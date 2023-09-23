@@ -131,6 +131,13 @@ int main(int argc, char **argv) {
     auto &latency = core.buildHistogram("latency", "message latency in seconds");
     auto &latencyTotal = latency.Add({{"type", "summary"}}, buckets);
 
+    auto &count = core.buildCounter("counter", "message count");
+    auto &count1 = count.Add({{"type", "1"}});
+    auto &count2 = count.Add({{"type", "2"}});
+    auto &count3 = count.Add({{"type", "3"}});
+    auto &count4 = count.Add({{"type", "4"}});
+
+
     // Build an info metric exposing the service name and id
     //auto &info = 
     core.buildInfo("info", "service info", {{"name", name}, {"id", id}});
@@ -157,6 +164,11 @@ int main(int argc, char **argv) {
             // Convert to seconds
             double latencyMs = (double) latency / 1000.0;
             latencyTotal.Observe(latencyMs);
+
+            count1.Increment(1);
+            count2.Increment(2);
+            count3.Increment(3);
+            count4.Increment(4);
         }
 
     }
