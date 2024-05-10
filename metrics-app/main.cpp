@@ -1,4 +1,5 @@
 #include "MetricsCore.h"
+#include "HealthCore.h"
 #include "yaml-cpp/yaml.h"
 #include <atomic>
 #include <fmt/core.h>
@@ -51,10 +52,13 @@ int main(int argc, char **argv) {
     int logLevel = spdlog::level::trace;
     std::string configFile = "metrics-app.yaml";
     uint16_t metricsPort = 6001;
+    uint16_t healthPort = 6002;
     int c = 0;
     std::string name = "metrics-app";
     std::string id;
-    std::string stringVal = "aaa";
+    time_t cycle = 1000;
+    time_t interval = 2000;
+    uint32_t threshold = 2;
     uint32_t instance = getContainerInstance();
     std::vector<std::reference_wrapper<prometheus::Gauge>> m_gauges;
 
@@ -62,13 +66,22 @@ int main(int argc, char **argv) {
     ::signal(SIGTERM, &sig_handler);
     std::srand(static_cast<uint32_t>(std::time(nullptr))); // use current time as seed for random generator
 
-    while ((c = getopt(argc, argv, "f:l:?")) != EOF) {
+    while ((c = getopt(argc, argv, "f:l:c:i:t:?")) != EOF) {
         switch (c) {
             case 'f':
                 configFile = optarg;
                 break;
             case 'l':
                 logLevel = std::stoi(optarg);
+                break;
+            case 'c':
+                cycle = std::stoi(optarg);
+                break; 
+            case 'i':
+                interval = std::stoi(optarg);
+                break;
+            case 't':
+                threshold = std::stoi(optarg);
                 break;
             case '?':
             default:
@@ -95,6 +108,9 @@ int main(int argc, char **argv) {
             if (m_yaml["metrics-port"]) {
                 metricsPort = m_yaml["metrics-port"].as<uint16_t>();
             }
+            if (m_yaml["health-por"]) {
+                healthPort = m_yaml["health-port"].as<uint16_t>();
+            }
             if (m_yaml["name"]) {
                 name = m_yaml["name"].as<std::string>();
             }
@@ -115,10 +131,12 @@ int main(int argc, char **argv) {
     spdlog::set_level(static_cast<spdlog::level::level_enum>(logLevel));
 
     std::string metricsUrl = fmt::format("0.0.0.0:{}", metricsPort);
+    std::string healthUrl = fmt::format("0.0.0.0:{}", healthPort);
 
     MetricsCore core(metricsUrl);
+    HealthCore health(healthUrl, {{ "main", interval, threshold }});
 
-    logger->info("{} id {} exposing metrics to {}", name, id, metricsUrl);
+    logger->info("{} id {} exposing metrics to {}, liveness probe {}", name, id, metricsUrl, healthUrl);
 
     auto &requests = core.buildCounter("requests", "incoming requests");
     auto &requestTotal = requests.Add({{"type", "summary"}});
@@ -145,7 +163,9 @@ int main(int argc, char **argv) {
     core.start();
 
     while (running.load()) {
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        std::this_thread::sleep_for(std::chrono::milliseconds(cycle));
+
+        health.checkin(0);
 
         // Simulate 100 incoming requests
         for (int i = 0; i < 100; i++) {

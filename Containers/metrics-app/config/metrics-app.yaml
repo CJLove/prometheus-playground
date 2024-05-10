@@ -3,6 +3,8 @@ log-level: 0
 
 metrics-port: 6000
 
+health-port: 6001
+
 name: metrics-app
 
 id: aaa-bbb-ccc

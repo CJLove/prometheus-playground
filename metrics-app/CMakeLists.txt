@@ -9,7 +9,7 @@ include_directories(
 
 find_package(yaml-cpp 0.6.2 REQUIRED)
 
-add_executable(metrics-app main.cpp MetricsCore.cpp)
+add_executable(metrics-app main.cpp MetricsCore.cpp HealthCore.cpp CheckinHistory.cpp )
 
 target_link_libraries(metrics-app Threads::Threads yaml-cpp prometheus-cpp::pull)
 
